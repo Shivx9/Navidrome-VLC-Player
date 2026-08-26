@@ -27,6 +27,8 @@ void volUp();
 void volDown();
 void enforceRotation();
 void checkSongChange();
+void scrolltitle();
+bool read_rfid();
 
 
 
@@ -129,7 +131,7 @@ void setup() {
     delay(500);
     init_display();
     delay(500);
-    display_text("Hi!");
+    // display_text("Hi!");
   }
 
   digitalWrite(LED_BUILTIN, LOW);
@@ -155,6 +157,10 @@ void loop() {
   // Fast-freqeuency code
   if (currentMillis - previousMillisFast >= INTERVAL_FAST) {
     previousMillisFast = currentMillis;
+
+    // Scrolling song title text
+    scrolltitle();
+
 
     ///////////////////  Input section
     // Read the raw value

@@ -11,6 +11,10 @@
 #define TFT_RST 9
 #define TFT_CS 10
 
+// Colors 
+#define RGB565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3))
+uint16_t customGrey = RGB565(100, 100, 100); 
+
 // Initialize hardware SPI using designated pins on ESP32-S3
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -37,8 +41,12 @@ const int imgDim = 64;
 const int radius = 32;
 const int centerX = 32;
 const int centerY = 32;
-const int imgPosX = (tftWidth - imgDim) / 2;  // X: 32
-const int imgPosY = 64;                       // Below title text
+const int imgPosX = (tftWidth - imgDim) / 2;  
+const int imgPosY = 56 ;//(tftHeight - imgDim) / 2; 
+
+// Scrolling text for song title
+int titlePos = 5;
+uint16_t titleWidth, titleHeight;
 
 // Memory Buffers (Allocated in PSRAM)
 uint16_t* decodedRawImage = NULL;
@@ -63,7 +71,7 @@ void init_display() {
 
   Serial.println("Setting up display");
   // set as params later
-  bool portrait = false, reversed = false;
+  bool portrait = true, reversed = true;
 
 
   // pinMode(TFT_BackLightPin, OUTPUT);
@@ -81,20 +89,91 @@ void init_display() {
   }
   delay(1000);
   tft.fillScreen(ST7735_BLACK);
-
   decodedRawImage = (uint16_t*)ps_malloc(imgDim * imgDim * sizeof(uint16_t));
   maskedImage = (uint16_t*)ps_malloc(imgDim * imgDim * sizeof(uint16_t));
 }
 
-inline void display_text(char *text) {
-  tft.setTextSize(2);                            // 1 = small, 2 = medium, etc.
+inline void display_text() {
+
+                              // 1 = small, 2 = medium, etc.
   tft.setTextColor(ST7735_WHITE, ST7735_BLACK);  // Text color, Background color
 
-  // Set the cursor position (X, Y)
-  tft.setCursor(10, 50);
+  // Print song and artist
+  tft.setTextWrap(false);
+  tft.setTextSize(1);
+  tft.setCursor(5, tftHeight - 15); // Set the cursor position (X, Y)
+  tft.println(currSongArtist);
+  tft.setTextSize(2);
+  tft.setCursor(5, 5);
+  tft.println(currSongName);
+  int16_t x, y; // dummy variables
+  tft.getTextBounds(currSongName,0,0,&x,&y,&titleWidth, &titleHeight);
+  titlePos = 5;
 
-  // Print text to display
-  tft.println(text);
+  // Print album (wrapped)
+  // tft.setTextWrap(true);
+  tft.setTextSize(1);
+  tft.setCursor(5, 25);
+  const int lineCharLimit = 20;
+  if(strlen(currSongAlbum)>lineCharLimit){ // Multi-line print
+    char line1[lineCharLimit]="", line2[lineCharLimit]="";
+    int breakPoint;
+    for(int i=lineCharLimit; i>0; --i){
+      
+
+
+      if(i==0){ // No spaces found, just wrap the word as it is
+        breakPoint=0;
+        tft.setTextWrap(true);
+        if(strlen(currSongAlbum)>lineCharLimit){ // if text length greather than 2 lines
+          char line[lineCharLimit*2];
+          strncpy(line, currSongAlbum, (lineCharLimit*2)-3 ); 
+          for(int j=(lineCharLimit*2)-3;j< (lineCharLimit*2); j++){  // append elipses at crop point
+            line[j]='.';
+          }
+          tft.println(line);
+        }
+        else tft.println(currSongAlbum);
+      }
+
+      else{  // check for spaces
+        if(currSongAlbum[i]==' '){
+          breakPoint = i;
+          break;
+        }
+      }
+    }
+
+    if(breakPoint!=0){ // wrap album name according to words
+      tft.setTextWrap(false);
+      strncpy(line1, currSongAlbum, breakPoint); // first line till where last word ends
+      for(int i=breakPoint; i<lineCharLimit; i++){
+        line1[i]=' '; // padding at the end
+      }
+      tft.println(line1);
+      
+      if(strlen(currSongAlbum)>lineCharLimit){ // if text length greather than 2 lines
+          
+          for(int i=0;i<lineCharLimit - 3; i++){
+            line2[i] = currSongAlbum[i + breakPoint + 1];
+          }
+          for(int j=lineCharLimit-3;j< lineCharLimit; j++){  // append elipses at crop point
+            line2[j]='.';
+          }
+          
+      }
+      else{ // no cropping required
+        for(int i=breakPoint+1; i<strlen(currSongAlbum); i++){
+          line2[i - (breakPoint + 1)] = currSongAlbum[i];
+        }
+      }
+      tft.setCursor(5, 35);
+
+      tft.println(line2); 
+
+    }
+  }
+  else tft.println(currSongAlbum);
 }
 
 
@@ -237,6 +316,9 @@ void refreshVisuals(){
   } else {
     Serial.println("Process halted due to Download/Decode failure.");
   }
+  tft.fillScreen(ST7735_BLACK);
+  delay(100);
+  display_text();
 }
 
 void enforceRotation(){
@@ -251,4 +333,18 @@ void enforceRotation(){
       rotationAngle = 0;
     }
   }
+}
+
+
+void scrolltitle(){
+  if(titleWidth<=screenWidth || currSongName=="") return;
+
+  // clear screen partially
+  tft.fillRect(0, 5, screenWidth, titleHeight, ST7735_BLACK);
+  if (titlePos + titleWidth < 0) titlePos = screenWidth;   // Wrap text back tot he front
+  else titlePos-=2;
+  tft.setTextSize(2);
+  tft.setCursor(titlePos, 5);
+  tft.println(currSongName);
+  
 }
