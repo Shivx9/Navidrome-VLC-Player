@@ -12,12 +12,12 @@ void init_rfid() {
   // pinMode(RFID_CS, OUTPUT);
   // digitalWrite(RFID_CS, HIGH);
   Serial.println("Initializing MFRC522 Reader...");
-  for(int i=0;i<10;i++){
-    mfrc522.PCD_Init();  // Initialize the RC522 hardware
-    Serial.println("Printing RFID Debug check");
-    MFRC522Debug::PCD_DumpVersionToSerial(mfrc522, Serial);
-    delay(1000);
-  }
+  // for(int i=0;i<10;i++){
+  //   mfrc522.PCD_Init();  // Initialize the RC522 hardware
+  //   Serial.println("Printing RFID Debug check");
+  //   MFRC522Debug::PCD_DumpVersionToSerial(mfrc522, Serial);
+  //   delay(1000);
+  // }
   
   Serial.println(F("\nSetup complete. Scan an RFID card or tag..."));
 }

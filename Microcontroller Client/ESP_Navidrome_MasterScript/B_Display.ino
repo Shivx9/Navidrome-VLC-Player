@@ -348,3 +348,15 @@ void scrolltitle(){
   tft.println(currSongName);
   
 }
+
+
+void displaySleep(bool flag){
+  if(flag){
+    tft.sendCommand(ST77XX_SLPIN);
+    // digitalWrite(TFT_CS, HIGH);
+  }
+  else{
+    tft.sendCommand(ST77XX_SLPOUT);
+    // digitalWrite(TFT_CS, LOW);
+  }
+}

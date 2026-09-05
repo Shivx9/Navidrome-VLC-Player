@@ -29,6 +29,7 @@ void enforceRotation();
 void checkSongChange();
 void scrolltitle();
 bool read_rfid();
+void setSleep(bool flag);
 
 
 
@@ -82,6 +83,7 @@ char rfidChar[32];
 const char* imageUrl = "getArt";  // Loading jpeg
 char lastSong[32] = "",currSongName[128]="", currSongArtist[128]="",currSongAlbum[128]="";
 char url[64];
+bool sleepState = false;
 
 
 //test variables
@@ -105,16 +107,6 @@ void setup() {
     Serial.println("PSRAM initialization failed!");
   }
 
-  // set up loop2
-  // xTaskCreatePinnedToCore(
-  //   loop2,    // Function to implement the task
-  //   "loop2",  // Name of the task
-  //   1000,     // Stack size in words
-  //   NULL,     // Task input parameter
-  //   0,        // Priority of the task
-  //   NULL,     // Task handle.
-  //   0         // Core where the task should run
-  // );
 
   delay(500);
   init_controls();
@@ -124,15 +116,25 @@ void setup() {
     init_wifi();
   }
 
-  // init_rfid();
   delay(500);
+  init_rfid();
+  
 
   if (!network_debug) {
     delay(500);
     init_display();
-    delay(500);
-    // display_text("Hi!");
   }
+
+    // set up loop2
+  xTaskCreatePinnedToCore(
+    loop2,    // Function to implement the task
+    "loop2",  // Name of the task
+    2000,     // Stack size in words
+    NULL,     // Task input parameter
+    0,        // Priority of the task
+    NULL,     // Task handle.
+    0         // Core where the task should run
+  );
 
   digitalWrite(LED_BUILTIN, LOW);
 }
@@ -158,9 +160,11 @@ void loop() {
   if (currentMillis - previousMillisFast >= INTERVAL_FAST) {
     previousMillisFast = currentMillis;
 
-    // Scrolling song title text
-    scrolltitle();
-
+    
+    if(!sleepState){
+      // Scrolling song title text
+      scrolltitle();
+    }
 
     ///////////////////  Input section
     // Read the raw value
@@ -237,24 +241,28 @@ void loop() {
         }
       }
     }
+
+    ///////////////////  END - Input section
   }
 
   // Medium-freqeuency code
   if (currentMillis - previousMillisMed >= INTERVAL_MEDIUM) {
     previousMillisMed = currentMillis;
 
-    enforceRotation();
-  }
-
-  // Slow-freqeuency code
-  if (currentMillis - previousMillisSlow >= INTERVAL_SLOW) {
-    previousMillisSlow = currentMillis;
+    if(!sleepState) enforceRotation();
 
     // New disc read
     if (read_rfid()) {
       Serial.println(rfidChar);
       newDisc(rfidChar);
     }
+  }
+
+  // Slow-freqeuency code
+  if (currentMillis - previousMillisSlow >= INTERVAL_SLOW) {
+    previousMillisSlow = currentMillis;
+
+    
 
     // check for song changes every 5 cycles
     if(songUpdatePoint<5){
@@ -280,7 +288,10 @@ void loop2(void* pvParameters) {
     // Serial.println(xPortGetCoreID());
     // Update rotation only if image arrays and canvas exist
     // enforceRotation();
-    delay(100);  // Frame pacing
+    delay(10000);
+    setSleep(true);
+    delay(10000);  // Frame pacing
+    setSleep(false);
 
   }
 }

@@ -60,3 +60,7 @@ String GET_Request(const char* server) {
 
   return payload;
 }
+
+void wirelessSleep(bool flag){
+  WiFi.setSleep(flag);
+}
