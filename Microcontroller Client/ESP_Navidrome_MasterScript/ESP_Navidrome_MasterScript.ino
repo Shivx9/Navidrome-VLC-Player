@@ -89,7 +89,7 @@ bool sleepState = false;
 //test variables
 bool display_debug = false;  //disables network when set to true - prevents brown-outs by reducing power-draw when connected to USB
 bool network_debug = false;   //disables display when set to true - prevents brown-outs by reducing power-draw when connected to USB
-
+bool disable_input = true;
 
 void setup() {
 
@@ -166,83 +166,86 @@ void loop() {
       scrolltitle();
     }
 
-    ///////////////////  Input section
-    // Read the raw value
-    cap1 = touchRead(CAP1_PIN);
-    cap2 = touchRead(CAP2_PIN);
-    soda1 = touchRead(SODA1_PIN);
-    currTime = millis();
+    if(!disable_input){
+      ///////////////////  Input section
+      // Read the raw value
+      cap1 = touchRead(CAP1_PIN);
+      cap2 = touchRead(CAP2_PIN);
+      soda1 = touchRead(SODA1_PIN);
+      currTime = millis();
 
-    // SODA1 - Play/Pause
-    if ((currTime - soda1_time) > debounceTime) {
-      if (soda1 > soda1_thresh) {
-        if (!soda1_press) {
-          soda1_press = true;
-          soda1_time = currTime;
-          Serial.println("Soda1 Pressed");
-        }
-      } else if (soda1_press) {
-        soda1_press = false;
-        Serial.println("Soda1 Released");
-        play();
-      }
-    }
-
-    // CAP1 - skip-ahead/ffw
-    if ((currTime - cap1_time) > debounceTime) {
-      if (cap1 > cap1_thresh) {
-        if (!cap1_press) {
-          cap1_press = true;
-          cap1_long_press = false;
-          cap1_time = currTime;
-          Serial.println("Cap1 Pressed");
-        } else if (!cap1_long_press && (currTime - cap1_time) > long_press_thresh) {
-          cap1_long_press = true;
-          // Trigger long-press action
-          ffwd(true);
-        }
-      } else if (cap1_press) {
-        cap1_press = false;
-
-        if (cap1_long_press) {
-          // End long-press action
-          Serial.println("Cap1 Long-press released");
-          ffwd(false);
-        } else {
-          // Execute short-press action
-          Serial.println("Cap1 short-press release");
-          skip(true);
+      // SODA1 - Play/Pause
+      if ((currTime - soda1_time) > debounceTime) {
+        if (soda1 > soda1_thresh) {
+          if (!soda1_press) {
+            soda1_press = true;
+            soda1_time = currTime;
+            Serial.println("Soda1 Pressed");
+          }
+        } else if (soda1_press) {
+          soda1_press = false;
+          Serial.println("Soda1 Released");
+          play();
         }
       }
-    }
 
-    // CAP2 - back/rwd
-    if ((currTime - cap2_time) > debounceTime) {
-      if (cap2 > cap2_thresh) {
-        if (!cap2_press) {
-          cap2_press = true;
-          cap2_long_press = false;
-          cap2_time = currTime;
-          Serial.println("Cap2 Pressed");
-        } else if (!cap2_long_press && (currTime - cap2_time) > long_press_thresh) {
-          cap2_long_press = true;
-          // Trigger long-press action
-          rwd(true);
-        }
-      } else if (cap2_press) {
-        cap2_press = false;
-        Serial.println("Cap2 Released");
-        if (cap2_long_press) {
-          // End long-press action
-          rwd(false);
-        } else {
-          // Execute short-press action
-          skip(false);
+      // CAP1 - skip-ahead/ffw
+      if ((currTime - cap1_time) > debounceTime) {
+        if (cap1 > cap1_thresh) {
+          if (!cap1_press) {
+            cap1_press = true;
+            cap1_long_press = false;
+            cap1_time = currTime;
+            Serial.println("Cap1 Pressed");
+          } else if (!cap1_long_press && (currTime - cap1_time) > long_press_thresh) {
+            cap1_long_press = true;
+            // Trigger long-press action
+            ffwd(true);
+          }
+        } else if (cap1_press) {
+          cap1_press = false;
+
+          if (cap1_long_press) {
+            // End long-press action
+            Serial.println("Cap1 Long-press released");
+            ffwd(false);
+          } else {
+            // Execute short-press action
+            Serial.println("Cap1 short-press release");
+            skip(true);
+          }
         }
       }
-    }
 
-    ///////////////////  END - Input section
+      // CAP2 - back/rwd
+      if ((currTime - cap2_time) > debounceTime) {
+        if (cap2 > cap2_thresh) {
+          if (!cap2_press) {
+            cap2_press = true;
+            cap2_long_press = false;
+            cap2_time = currTime;
+            Serial.println("Cap2 Pressed");
+          } else if (!cap2_long_press && (currTime - cap2_time) > long_press_thresh) {
+            cap2_long_press = true;
+            // Trigger long-press action
+            rwd(true);
+          }
+        } else if (cap2_press) {
+          cap2_press = false;
+          Serial.println("Cap2 Released");
+          if (cap2_long_press) {
+            // End long-press action
+            rwd(false);
+          } else {
+            // Execute short-press action
+            skip(false);
+          }
+        }
+      }
+
+      ///////////////////  END - Input section
+    }
+    
   }
 
   // Medium-freqeuency code

@@ -25,7 +25,7 @@ int textWidth;
 int textHeight = 16;
 int screenWidth = 160;
 
-// const int TFT_BackLightPin = 21;
+const int TFT_BackLightPin = 39;
 const int freq = 200;
 const int ledChannel = 0;
 const int resolution = 4;
@@ -74,8 +74,8 @@ void init_display() {
   bool portrait = true, reversed = true;
 
 
-  // pinMode(TFT_BackLightPin, OUTPUT);
-  // digitalWrite(TFT_BackLightPin, HIGH);
+  pinMode(TFT_BackLightPin, OUTPUT);
+  digitalWrite(TFT_BackLightPin, HIGH);
 
   tft.initR(INITR_BLACKTAB);
   int rot = 1;
@@ -352,11 +352,18 @@ void scrolltitle(){
 
 void displaySleep(bool flag){
   if(flag){
+    // Sleep
     tft.sendCommand(ST77XX_SLPIN);
+    delay(50);
+    digitalWrite(TFT_BackLightPin, LOW);
     // digitalWrite(TFT_CS, HIGH);
   }
   else{
+    // Wake up
     tft.sendCommand(ST77XX_SLPOUT);
+    delay(50);
+    digitalWrite(TFT_BackLightPin, HIGH);
+
     // digitalWrite(TFT_CS, LOW);
   }
 }
